@@ -1,0 +1,10 @@
+*.bbl
+*.blg
+*.dvi
+*.log
+*.out
+paper-lassosum2.pdf
+paper-lassosum2-supp.pdf
+*.synctex.gz
+*.aux
+*.tex.bak
