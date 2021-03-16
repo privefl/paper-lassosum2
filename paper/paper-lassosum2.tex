@@ -78,7 +78,7 @@
 
 \noindent Contact: \url{florian.prive.21@gmail.com}
 
-\vspace*{5em}
+\vspace*{8em}
 
 \abstract{
   We present lassosum2, a new version of the polygenic score method lassosum. This is now implemented in package bigsnpr and uses the exact same input data as LDpred2. This new version is also very fast, which means that it can be run with almost no extra coding nor computational time when already running LDpred2. It can also be more robust than LDpred2, e.g.\ when there is some large GWAS sample size misspecification, making lassosum2 complementary to LDpred2.
@@ -89,13 +89,6 @@
 \clearpage
 
 \section*{Introduction}
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\section*{Results}
-
-
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -124,10 +117,32 @@ Then the most time-consuming part is computing $R_{.,j}^T \beta^{(t-1)}$.
 To make this faster, instead of computing $R_{.,j}^T \beta^{(t-1)}$ at each iteration, we can start with a vector with only 0s initially (for all $j$) since $\beta^{(0)} \equiv 0$, and then updating this vector when $\beta_j^{(t)} \neq \beta_j^{(t-1)}$ only. Note that only positions $k$ for which $R_{k,j} \neq 0$ must be updated in this vector. 
 
 In this new implementation of the lassosum model, the input parameters are the correlation matrix $R$, the GWAS summary statistics ($\widehat{\gamma}_j$, $\text{se}(\widehat{\gamma}_j)$ and $n_j$), and the two hyper-parameters $\lambda$ and $s$. 
-Then, except from the hyper-parameters, this is the exact same input as for LDpred2 \cite[]{prive2020ldpred2}.
+Therefore, except from the hyper-parameters, this is the exact same input as for LDpred2 \cite[]{prive2020ldpred2}.
 For $s$, we now try $\{0.1, 0.2, \dots, 1.0\}$ by default instead of only $\{0.2, 0.5, 0.8, 1.0\}$.
 For $\lambda$, the default in lassosum uses a sequence of 20 values equally spaced on a log scale between 0.1 and 0.001; we now use a sequence between $\lambda_0$ and $\lambda_0 / 100$ by default in lassosum2, where $\lambda_0 = \max_j \left|\widehat{\beta}_j\right|$ is the minimum $\lambda$ for which no variable enter the model because the L1-regularization is too strong.
+Note that we do not provide an ``auto'' version using pseudo-validation as in \cite{mak2017polygenic} as we have not found it very robust [TODO: ADD FIGURE SHOWING THIS + FIG \ref{fig:auc}].
+Also note that, as in LDpred2, we run lassosum2 genome-wide and do not require splitting the genome into independent LD blocks.
 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section*{Results}
+
+We use the exact same data as in \cite{prive2020ldpred2}; we use external summary statistics for eight case-control phenotypes and predict in the UK Biobank (UKBB) European data by keeping 10,000 individuals as validation set for tuning hyper-parameters and using the remaining 352,320 individuals as test set.
+As we use the exact same split as before, results can be directly compared to results in \cite{prive2020ldpred2} and we run only lassosum2 as the new method.
+Figure \ref{fig:auc} compares lassosum2 with lassosum and LDpred2. AUC values for lassosum2 are similar to lassosum for breast cancer (BRCA), coronary artery disease (CAD), depression (MDD), prostate cancer (PRCA), rheumatoid arthritis (RA) and type 2 diabetes (T2D), and slighly better for asthma and type 1 diabetes (T1D).
+Prediction with LDpred2 is still slightly higher than with lassosum2, except for MDD and TAD for which they are similar (Figure \ref{fig:auc}).
+
+\begin{figure}[htb]
+	\centerline{\includegraphics[width=0.85\textwidth]{AUC-lassosum}}
+	\caption{lassosum2 is compared with LDpred2, LDpred2-auto, lassosum and lassosum-auto using  published  external  summary  statistics and the UKBB data.  Bars present AUC values on the test set of UKBB (mean and 95\% CI from 10,000 bootstrap samples). Corresponding values are reported in [TODO]. For additional comparisons to C+T, SCT, PRS-CS, PRS-CS-auto and SBayesR \cite[]{prive2019making,ge2019polygenic,lloyd2019improved}, the reader is referred to figures 4 and S1 of \cite{prive2020ldpred2}.\label{fig:auc}}
+\end{figure}
+
+We then designed simulations where variants have different GWAS sample sizes, which is often the case when meta-analyzing GWAS from multiple cohorts without the same genome coverage.
+Using [XXX] variants of chromosome 22, we simulate [BLABLA] where half of the variants use 100\% of the individuals for GWAS, one quarter uses only 80\%, and the remaining quarter uses only 60\% of the total GWAS sample size. We then run C+T, LDpred2-inf, LDpred2(-grid), LDpred2-auto, lassosum, lassosum2, PRS-CS and SBayesR by using either the true per-variant GWAS sample size, or the total sample size. Note that C+T does not use the sample size information, PRS-CS can only use one global sample size and SBayesR always diverged (so we discarded it).
+
+[BLABLA ABOUT BAD SUMSTATS EXCEPT THE PGC's + ADD FIGURE ON QC FROM LDPRED2]
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
