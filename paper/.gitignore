@@ -8,3 +8,5 @@ paper-lassosum2-supp.pdf
 *.synctex.gz
 *.aux
 *.tex.bak
+natbib.bst
+natbib.sty
