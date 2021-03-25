@@ -97,7 +97,7 @@ This has motivated this work where we present a re-implementation of lassosum in
 This new version uses the exact same input data as LDpred2 and is also very fast, which means that it can be run with almost no extra coding nor computational time when already running LDpred2.
 Therefore, users of R package bigsnpr can now run two of the best polygenic score methods, and then can choose the best model or stack models to improve prediction \cite[]{prive2019making,kulm2021systematic}.
 This new version of lassosum also comes with a few improvements that leads to higher predictive performance for e.g.\ asthma and type 1 diabetes.
-The code is also substantially simpler, e.g. it does not require splitting the genome in independent LD blocks anymore, which might not be always easy \cite[]{prive2021optimal}. 
+The code is also substantially simpler, e.g. it does not require splitting the genome in independent LD blocks anymore, which might not always be easy \cite[]{prive2021optimal}. 
 Finally, we show that lassosum can be more robust than LDpred2, e.g.\ in the case of a large GWAS sample size misspecification. 
 Again, this motivates our development that makes it easy to run both methods to get the best prediction possible.
 
@@ -170,7 +170,7 @@ Although this sample size misspecificaition can possibly be detected from the qu
 
 \section*{Code and results availability}
 
-All code used for this paper is available at \url{https://github.com/privefl/paper-lassosum2/tree/master/code} [TODO: EXPORT CODE AND FIGURES].
+All code used for this paper is available at \url{https://github.com/privefl/paper-lassosum2/tree/master/code}.
 Latest versions of R package bigsnpr can be installed from GitHub.
 A tutorial on running lassosum2 along with LDpred2 using R package bigsnpr is available at \url{https://privefl.github.io/bigsnpr/articles/LDpred2.html} [TODO: UPDATE].
 We have extensively used R packages bigstatsr and bigsnpr \cite[]{prive2017efficient} for analyzing large genetic data, packages from the future framework \cite[]{bengtsson2020unifying} for easy scheduling and parallelization of analyses on the HPC cluster, and packages from the tidyverse suite \cite[]{wickham2019welcome} for shaping and visualizing results.
@@ -183,6 +183,7 @@ This research has been conducted using the UK Biobank Resource under Application
 \section*{Funding}
 
 F.P.\ and B.J.V.\ are supported by the Danish National Research Foundation (Niels Bohr Professorship to Prof. John McGrath).
+B.J.V.\ is also supported by a Lundbeck Foundation Fellowship (R335-2019-2339).
 
 \section*{Declaration of Interests}
 
