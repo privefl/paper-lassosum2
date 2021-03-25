@@ -73,7 +73,7 @@
 \noindent$^{\text{\sf 1}}$National Centre for Register-Based Research, Aarhus University, Aarhus, 8210, Denmark. \\
 \noindent$^{\text{\sf 2}}$Bioinformatics Research Centre, Aarhus University, Aarhus, 8000, Denmark. \\
 \noindent$^{\text{\sf 3}}$Department of Genetics and Genomic Sciences, Icahn School of Medicine at Mount Sinai, New York, New York, 10029, USA \\
-\noindent$^{\text{\sf 4}}$[TO FILL] \\
+\noindent$^{\text{\sf 4}}$Fano Labs, Hong Kong \\
 \noindent$^\ast$To whom correspondence should be addressed.\\
 
 \noindent Contact: \url{florian.prive.21@gmail.com}
@@ -81,17 +81,26 @@
 \vspace*{8em}
 
 \abstract{
-  We present lassosum2, a new version of the polygenic score method lassosum. This is now implemented in package bigsnpr and uses the exact same input data as LDpred2. This new version is also very fast, which means that it can be run with almost no extra coding nor computational time when already running LDpred2. It can also be more robust than LDpred2, e.g.\ in the case of a large GWAS sample size misspecification. Therefore, lassosum2 is complementary to LDpred2.
+  We present lassosum2, a new version of the polygenic score method lassosum, which we re-implement in R package bigsnpr. This new version uses the exact same input data as LDpred2 and is also very fast, which means that it can be run with almost no extra coding nor computational time when already running LDpred2. It can also be more robust than LDpred2, e.g.\ in the case of a large GWAS sample size misspecification. Therefore, lassosum2 is complementary to LDpred2.
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \clearpage
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \section*{Introduction}
 
+Multiple studies have shown that LDpred2 and lassosum are consistently ranking best among methods for polygenic prediction \cite[]{prive2020ldpred2,pain2020evaluation,kulm2021systematic}.
+This has motivated this work where we present a re-implementation of lassosum in R package bigsnpr \cite[]{prive2017efficient}, which we call lassosum2.
+This new version uses the exact same input data as LDpred2 and is also very fast, which means that it can be run with almost no extra coding nor computational time when already running LDpred2.
+Therefore, users of R package bigsnpr can now run two of the best polygenic score methods, and then can choose the best model or stack models to improve prediction \cite[]{prive2019making,kulm2021systematic}.
+This new version of lassosum also comes with a few improvements that leads to higher predictive performance for e.g.\ asthma and type 1 diabetes.
+The code is also substantially simpler, e.g. it does not require splitting the genome in independent LD blocks anymore, which might not be always easy \cite[]{prive2021optimal}. 
+Finally, we show that lassosum can be more robust than LDpred2, e.g.\ in the case of a large GWAS sample size misspecification. 
+Again, this motivates our development that makes it easy to run both methods to get the best prediction possible.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section*{New implementation}
 
@@ -99,7 +108,7 @@ From \cite{mak2017polygenic}, the solution from lassosum can be obtained by iter
 \[
 \beta_j^{(t)} =
 \begin{cases}
-\text{sign}\left(u_j^{(t)}\right) \left|u_j^{(t)} - \lambda\right| / \left(\widetilde{X}_j^T \widetilde{X}_j + s\right) & \text{if } \left|u_j^{(t)}\right| > \lambda ~, \\
+\text{sign}\left(u_j^{(t)}\right) \left(\left|u_j^{(t)}\right| - \lambda\right) / \left(\widetilde{X}_j^T \widetilde{X}_j + s\right) & \text{if } \left|u_j^{(t)}\right| > \lambda ~, \\
 0 & \text{otherwise.}
 \end{cases}
 \]
@@ -107,21 +116,21 @@ where
 \[
 u_j^{(t)} = r_j - \widetilde{X}_j^T \left( \widetilde{X} \beta^{(t-1)} - \widetilde{X}_j \beta_j^{(t-1)} \right) ~.
 \]
-Following notations in \cite{prive2020ldpred2} and denoting $\widetilde{X} = \sqrt{\frac{1-s}{n-1}} C_n G S^{-1}$, then $\widetilde{X}_j^T \widetilde{X} = (1-s) R_{j,.} = (1-s) R_{.,j}^T$ where $R$ is the correlation matrix between variants.
+Following notations from \cite{prive2020ldpred2} and denoting $\widetilde{X} = \sqrt{\frac{1-s}{n-1}} C_n G S^{-1}$, when $G$ is the genotype matrix, $C_n$ is the centering matrix and $S$ is the diagonal matrix of standard deviations of $G$, then $\widetilde{X}_j^T \widetilde{X} = (1-s) R_{j,.} = (1-s) R_{.,j}^T$ where $R$ is the correlation matrix between variants.
 Then $\widetilde{X}_j^T \widetilde{X}_j + s = 1$ and
 \[
 u_j^{(t)} = \widehat{\beta}_j + (1-s) \left( \beta_j^{(t-1)} - R_{.,j}^T \beta^{(t-1)} \right) ~,
 \]
-where $r_j = \widehat{\beta}_j =  \dfrac{\widehat{\gamma}_j}{\sqrt{n_j ~ \text{se}(\widehat{\gamma}_j)^2 + \widehat{\gamma}_j^2}}$ and $\widehat{\gamma}_j$ is the effect of variant $j$ from the GWAS \cite[]{mak2017polygenic,prive2021high}.
+where $r_j = \widehat{\beta}_j =  \dfrac{\widehat{\gamma}_j}{\sqrt{n_j ~ \text{se}(\widehat{\gamma}_j)^2 + \widehat{\gamma}_j^2}}$ and $\widehat{\gamma}_j$ is the GWAS effect of variant $j$ and $n$ is the GWAS sample size \cite[]{mak2017polygenic,prive2021high}.
 Then the most time-consuming part is computing $R_{.,j}^T \beta^{(t-1)}$.
-To make this faster, instead of computing $R_{.,j}^T \beta^{(t-1)}$ at each iteration ($j$ and $t$), we can start with a vector with only 0s initially (for all $j$) since $\beta^{(0)} \equiv 0$, and then updating this vector when $\beta_j^{(t)} \neq \beta_j^{(t-1)}$ only. Note that only positions $k$ for which $R_{k,j} \neq 0$ must be updated in this vector. 
+To make this faster, instead of computing $R_{.,j}^T \beta^{(t-1)}$ at each iteration ($j$ and $t$), we can start with a vector with only 0s initially (for all $j$) since $\beta^{(0)} \equiv 0$, and then updating this vector when $\beta_j^{(t)} \neq \beta_j^{(t-1)}$ only. Note that only positions $k$ for which $R_{k,j} \neq 0$ must be updated in this vector $R_{.,j}^T \beta^{(t-1)}$. 
 
 In this new implementation of the lassosum model, the input parameters are the correlation matrix $R$, the GWAS summary statistics ($\widehat{\gamma}_j$, $\text{se}(\widehat{\gamma}_j)$ and $n_j$), and the two hyper-parameters $\lambda$ and $s$. 
-Therefore, except from the hyper-parameters, this is the exact same input as for LDpred2 \cite[]{prive2020ldpred2}.
+Therefore, except for the hyper-parameters, this is the exact same input as for LDpred2 \cite[]{prive2020ldpred2}.
 For $s$, we now try $\{0.1, 0.2, \dots, 1.0\}$ by default, instead of only $\{0.2, 0.5, 0.8, 1.0\}$.
 For $\lambda$, the default in lassosum uses a sequence of 20 values equally spaced on a log scale between 0.1 and 0.001; we now use a sequence between $\lambda_0$ and $\lambda_0 / 100$ by default in lassosum2, where $\lambda_0 = \max_j \left|\widehat{\beta}_j\right|$ is the minimum $\lambda$ for which no variable enter the model because the L1-regularization is too strong.
 Note that we do not provide an ``auto'' version using pseudo-validation (as in \cite{mak2017polygenic}) as we have not found it to be very robust (Figures \ref{fig:auc} and \ref{fig:pseudoval}).
-Also note that, as in LDpred2, we run lassosum2 genome-wide and do not require splitting the genome into independent LD blocks anymore.
+Also note that, as in LDpred2, we run lassosum2 genome-wide using a sparse correlation matrix which assumes that variants further away than 3 cM are not correlated, and therefore we do not require splitting the genome into independent LD blocks anymore (as in lassosum).
 
 
 
@@ -133,7 +142,7 @@ We use the exact same data as in \cite{prive2020ldpred2}; we use external summar
 As we use the exact same split as before, results can be directly compared to results in \cite{prive2020ldpred2} and we run only lassosum2 as the new method.
 Figure \ref{fig:auc} compares lassosum2 with lassosum and LDpred2. AUC values for lassosum2 are similar to lassosum for breast cancer (BRCA), coronary artery disease (CAD), depression (MDD), prostate cancer (PRCA), rheumatoid arthritis (RA) and type 2 diabetes (T2D), and slighly better for asthma and type 1 diabetes (T1D).
 Prediction performance with LDpred2 is still slightly higher than with lassosum2, except for MDD and T1D for which predictive accuracy is similar (Figure \ref{fig:auc}).
-In terms of computational speed, lassosum2 runs in a few minutes compared to a few hours for lassosum and LDpred2.
+In terms of computational speed, lassosum2 runs in a few minutes compared to a few hours for LDpred2.
 
 \begin{figure}[htb]
 	\centerline{\includegraphics[width=0.85\textwidth]{AUC-lassosum}}
@@ -143,16 +152,16 @@ In terms of computational speed, lassosum2 runs in a few minutes compared to a f
 We then design simulations where variants have different GWAS sample sizes, which is often the case when meta-analyzing GWAS from multiple cohorts without the same genome coverage.
 Using 16,410 HapMap3 variants from chromosome 22, we simulate quantitative phenotypes assuming an heritability of 20\% and 2000 causal variants.
 For half of the variants, we use 100\% of 300,000 individuals for GWAS, but use only 80\% for one quarter of them and 60\% for the remaining quarter. We then run C+T, LDpred2-inf, LDpred2(-grid), LDpred2-auto, lassosum, lassosum2, PRS-CS and SBayesR by using either the true per-variant GWAS sample size, or the total sample size. 
-Averaged over 10 simulations, when providing true per-variant GWAS sample sizes, squared correlations (in \%) between the polygenic scores and the simulate phenotypes are of 13.9 for C+T, 15.4 for PRS-CS, 17.5 for lassosum, 18.0 for lassosum2, and 17.8 for LDpred2 (Figure \ref{fig:simu-misN}).
+Averaged over 10 simulations, when providing true per-variant GWAS sample sizes, squared correlations (in \%) between the polygenic scores and the simulated phenotypes are of 13.9 for C+T, 15.4 for PRS-CS, 17.5 for lassosum, 18.0 for lassosum2, and 17.8 for LDpred2 (Figure \ref{fig:simu-misN}).
 Note that C+T does not use this sample size information, that PRS-CS can only use one global sample size, and that SBayesR always diverged (so we discarded it).
-For methods that use the per-variant GWAS sample size, predictive performance slightly decreased from 17.5 to 17.4 for lassosum, from 18.0 to 17.5 for lassosum2, but decreased by a lot for LDpred2 with new values of 11.5 for LDpred2-grid, 5.7 for LDpred2-auto and 6.8 for LDpred2-inf (Figure \ref{fig:simu-misN}).
+For methods that use the per-variant GWAS sample sizes, predictive performance slightly decreases from 17.5 to 17.4 for lassosum, from 18.0 to 17.5 for lassosum2, but dramatically decreases for LDpred2 with new values of 11.5 for LDpred2-grid, 5.7 for LDpred2-auto and 6.8 for LDpred2-inf (Figure \ref{fig:simu-misN}).
 Therefore, this extreme simulation scenario shows that LDpred2 can be sensitive to GWAS sample size misspecification, whereas lassosum (and lassosum2) seems little affected by this.
 
-To sum up, here we propose a new version of lassosum, lassosum2, that can be run with almost no extra coding nor computational time when already running LDpred2 because it is very fast and uses the same input arguments as LDpred2.
-We also show that it generally provides good predictive performance, sometimes better than LDpred2, e.g.\ in the case of severe sample size misspecification.
-Finally, we want to note that, except from the GWAS summary statistics provided by the Psychiatric Genomics Consortium (PGC), per-variant sample sizes are often not reported in GWAS summary statistics.
-We show here that lassosum is robust to this misspecification, but that it can dramatically affect predictive performance of LDpred2; we may wonder which other statistical genetics methods could be affected by this missing information?
-Although that this sample size misspecificaition can probably be detected from the quality control plot we propose in \cite{prive2020ldpred2} (Figure \ref{fig:qcplot}), we urge researchers to report the per-variant sample sizes from their GWAS meta-analyses.
+To sum up, here we propose a new version of lassosum, lassosum2, that can be run with almost no extra coding nor computational time when already running LDpred2 because it uses the same input arguments as LDpred2 and is very fast.
+We also show that it generally provides very good predictive performance, sometimes better than LDpred2, e.g.\ in the case of severe sample size misspecification.
+Finally, we would like to mention that, except for the GWAS summary statistics provided by the Psychiatric Genomics Consortium (PGC), per-variant GWAS sample sizes are often not reported in GWAS summary statistics.
+We show here that lassosum is robust to this misspecification (i.e.\ when using the total sample size for all variants), but that it can dramatically affect predictive performance of LDpred2; we may wonder which other statistical genetics methods could be affected by this missing information?
+Although this sample size misspecificaition can possibly be detected from the quality control plot we propose in \cite{prive2020ldpred2} (Figure \ref{fig:qcplot}), we urge researchers to report the per-variant sample sizes from their GWAS meta-analyses.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -162,12 +171,9 @@ Although that this sample size misspecificaition can probably be detected from t
 \section*{Code and results availability}
 
 All code used for this paper is available at \url{https://github.com/privefl/paper-lassosum2/tree/master/code} [TODO: EXPORT CODE AND FIGURES].
-We have extensively used R packages bigstatsr and bigsnpr \cite[]{prive2017efficient} for analyzing large genetic data, packages from the future framework \cite[]{bengtsson2020unifying} for easy scheduling and parallelization of analyses on the HPC cluster, and packages from the tidyverse suite \cite[]{wickham2019welcome} for shaping and visualizing results.
-
-R packages bigstatsr and bigsnpr can be installed from GitHub and CRAN.
-A tutorial on fitting penalized regressions with R package bigstatsr is available at \url{https://privefl.github.io/bigstatsr/articles/penalized-regressions.html}.
+Latest versions of R package bigsnpr can be installed from GitHub.
 A tutorial on running lassosum2 along with LDpred2 using R package bigsnpr is available at \url{https://privefl.github.io/bigsnpr/articles/LDpred2.html} [TODO: UPDATE].
-
+We have extensively used R packages bigstatsr and bigsnpr \cite[]{prive2017efficient} for analyzing large genetic data, packages from the future framework \cite[]{bengtsson2020unifying} for easy scheduling and parallelization of analyses on the HPC cluster, and packages from the tidyverse suite \cite[]{wickham2019welcome} for shaping and visualizing results.
 
 \section*{Acknowledgements}
 
