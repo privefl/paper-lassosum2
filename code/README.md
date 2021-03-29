@@ -1,8 +1,8 @@
 ## Structure of the code
 
-#### Reusing previous codde
+#### Reusing previous code
 
-This paper reuses some of the code (e.g. preparing the data) and results (e.g. for other methods) from the LDpred2 paper, which you can view at https://github.com/privefl/paper-ldpred2/tree/master/code.
+This paper reuses some of the code (e.g. for preparing the data) and results (e.g. for other methods) from the LDpred2 paper, which you can view at https://github.com/privefl/paper-ldpred2/tree/master/code.
 
 
 #### Added code in this paper
