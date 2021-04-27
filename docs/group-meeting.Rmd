@@ -1,0 +1,159 @@
+---
+title: "Misspecification"
+output:
+  xaringan::moon_reader:
+    seal: false
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+knitr::opts_chunk$set(echo = FALSE, fig.align = 'center', dev = "png")
+```
+
+class: title-slide center middle inverse
+
+## Multiple sources of misspecification<br>in summary statistics
+
+<br>
+
+### Florian Privé
+
+---
+
+class: center middle inverse
+
+# Introduction
+
+---
+
+### Reminder: from marginal to joint effects
+
+The joint effects (with an intercept) are obtained by solving
+$$\boldsymbol{\hat{\gamma}_{\text{joint}}} = (\boldsymbol{G}^T \boldsymbol{C_n} \boldsymbol{G})^{-1} \boldsymbol{G}^T \boldsymbol{C_n} \boldsymbol{y} ~.$$
+
+The marginal effects (assuming no covariate) simplify to 
+$$\boldsymbol{\hat{\gamma}_{\text{marg}}} = \dfrac{1}{n-1} \boldsymbol{S}^{-2} \boldsymbol{G}^T \boldsymbol{C_n} \boldsymbol{y} ~.$$
+We further note that the correlation matrix of $\boldsymbol{G}$ is $$\boldsymbol{R} =  \dfrac{1}{n-1} \boldsymbol{S}^{-1} \boldsymbol{G}^T \boldsymbol{C_n} \boldsymbol{G}  \boldsymbol{S}^{-1} ~.$$
+
+Then we get 
+$$\boldsymbol{\hat{\gamma}_{\text{joint}}} = \boldsymbol{S}^{-1} \boldsymbol{R}^{-1} \boldsymbol{S} \boldsymbol{\hat{\gamma}_{\text{marg}}} ~.$$
+Where $S_{j,j} = \text{sd}(\boldsymbol{G_j}) \approx \dfrac{\text{sd}(\boldsymbol{y})}{\sqrt{n ~ \text{se}(\hat{\gamma}_j)^2 + \hat{\gamma}_j^2}}$.
+
+---
+
+### Quality control in LDpred2
+
+To verify that $S_{j,j} = \text{sd}(\boldsymbol{G_j}) \approx \dfrac{\text{sd}(\boldsymbol{y})}{\sqrt{n ~ \text{se}(\hat{\gamma}_j)^2 + \hat{\gamma}_j^2}}$.
+
+```{r, out.width="80%"}
+knitr::include_graphics("figures/sd-approx-BRCA.png")
+```
+
+---
+
+### **First misspecification**: the correlation matrix
+
+Possible issues
+
+1. $R$ is estimated from another dataset (not the GWAS one)
+
+2. $R$ is made sparse (for computational reasons)
+
+    - $R_{i,j}=0$ if variants $i$ and $j$ are more than 3cM away (still 30 GB to store for e.g. 1M HapMap3 variants)
+    
+    - $R_{i,j}=0$ if $R_{i,j}<0.01$? Could extend to more than 1M variants, but would increase misspecification (not SPD at all).
+    
+--
+
+<br>
+
+Possible solutions
+
+1. Replace $R$ by $R_s = (1 - s) ~ R + s ~ I$ (lassosum) or $R_{\delta} = R + \delta ~ I$.
+
+2. Replace $R_{i,j}$ by $R_{i,j} \cdot \exp(-2 N_e d_{i,j} / m)$ (RSS and SBayesR),
+where Ne = 11400, m = 183 and $d_{i,j}$ is the distance in Morgan. This shrinkage is equal to $0.024$ for 3cM.
+    
+---
+
+### **Second misspecification**: varying GWAS sample sizes
+
+Simulating phenotypes with h2=0.2 and 2000 causal variants, and performing GWAS with 
+- N=300K for 50% of variants, 
+- N=240K (80%) for 25%, and 
+- N=180K (60%) for 25%. 
+
+--
+
+```{r, out.width="90%", message=FALSE}
+magick::image_read_pdf("figures/simu-misN.pdf", pages = 1)
+```
+
+---
+
+### A closer look at lassosum2
+
+Using $R_{\delta} = R + \delta ~ I$ $=>$ elastic-net (instead of simply lasso)
+
+```{r, out.width="93%", message=FALSE}
+knitr::include_graphics("figures/lassosum2-mis.JPG")
+```
+
+---
+
+### A closer look at LDpred2-grid
+
+We can actually try some very small heritability (=> strong regularization)
+
+```{r, out.width="93%", message=FALSE}
+knitr::include_graphics("figures/ldpred2-mis.JPG")
+```
+
+---
+
+### Imputation of N?
+
+```{r, out.width="70%", message=FALSE}
+magick::image_read_pdf("figures/simu-qc-plot.pdf", pages = 1)
+```
+
+---
+
+### A closer look at lassosum2 (with imputed N)
+
+<br>
+
+```{r, out.width="93%", message=FALSE}
+knitr::include_graphics("figures/lassosum2-mis-imputeN.JPG")
+```
+
+---
+
+### A closer look at LDpred2-grid (with imputed N)
+
+<br>
+
+```{r, out.width="93%", message=FALSE}
+knitr::include_graphics("figures/ldpred2-mis-imputeN.JPG")
+```
+
+---
+
+### **Third misspecification**: correlation from imputed genotypes
+
+
+---
+
+### **Fourth misspecification**: sumstats from imputed genotypes
+
+
+---
+
+class: center middle inverse
+
+# That's all folks!

@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Misspecification</title>
+    <meta charset="utf-8" />
+    <script src="libs/header-attrs/header-attrs.js"></script>
+    <link href="libs/remark-css/default.css" rel="stylesheet" />
+    <link href="libs/remark-css/default-fonts.css" rel="stylesheet" />
+  </head>
+  <body>
+    <textarea id="source">
+
+
+
+
+class: title-slide center middle inverse
+
+## Multiple sources of misspecification&lt;br&gt;in summary statistics
+
+&lt;br&gt;
+
+### Florian Privé
+
+---
+
+class: center middle inverse
+
+# Introduction
+
+---
+
+### Reminder: from marginal to joint effects
+
+The joint effects (with an intercept) are obtained by solving
+`$$\boldsymbol{\hat{\gamma}_{\text{joint}}} = (\boldsymbol{G}^T \boldsymbol{C_n} \boldsymbol{G})^{-1} \boldsymbol{G}^T \boldsymbol{C_n} \boldsymbol{y} ~.$$`
+
+The marginal effects (assuming no covariate) simplify to 
+`$$\boldsymbol{\hat{\gamma}_{\text{marg}}} = \dfrac{1}{n-1} \boldsymbol{S}^{-2} \boldsymbol{G}^T \boldsymbol{C_n} \boldsymbol{y} ~.$$`
+We further note that the correlation matrix of `\(\boldsymbol{G}\)` is `$$\boldsymbol{R} =  \dfrac{1}{n-1} \boldsymbol{S}^{-1} \boldsymbol{G}^T \boldsymbol{C_n} \boldsymbol{G}  \boldsymbol{S}^{-1} ~.$$`
+
+Then we get 
+`$$\boldsymbol{\hat{\gamma}_{\text{joint}}} = \boldsymbol{S}^{-1} \boldsymbol{R}^{-1} \boldsymbol{S} \boldsymbol{\hat{\gamma}_{\text{marg}}} ~.$$`
+Where `\(S_{j,j} = \text{sd}(\boldsymbol{G_j}) \approx \dfrac{\text{sd}(\boldsymbol{y})}{\sqrt{n ~ \text{se}(\hat{\gamma}_j)^2 + \hat{\gamma}_j^2}}\)`.
+
+---
+
+### Quality control in LDpred2
+
+To verify that `\(S_{j,j} = \text{sd}(\boldsymbol{G_j}) \approx \dfrac{\text{sd}(\boldsymbol{y})}{\sqrt{n ~ \text{se}(\hat{\gamma}_j)^2 + \hat{\gamma}_j^2}}\)`.
+
+&lt;img src="figures/sd-approx-BRCA.png" width="80%" style="display: block; margin: auto;" /&gt;
+
+---
+
+### **First misspecification**: the correlation matrix
+
+Possible issues
+
+1. `\(R\)` is estimated from another dataset (not the GWAS one)
+
+2. `\(R\)` is made sparse (for computational reasons)
+
+    - `\(R_{i,j}=0\)` if variants `\(i\)` and `\(j\)` are more than 3cM away (still 30 GB to store for e.g. 1M HapMap3 variants)
+    
+    - `\(R_{i,j}=0\)` if `\(R_{i,j}&lt;0.01\)`? Could extend to more than 1M variants, but would increase misspecification (not SPD at all).
+    
+--
+
+&lt;br&gt;
+
+Possible solutions
+
+1. Replace `\(R\)` by `\(R_s = (1 - s) ~ R + s ~ I\)` (lassosum) or `\(R_{\delta} = R + \delta ~ I\)`.
+
+2. Replace `\(R_{i,j}\)` by `\(R_{i,j} \cdot \exp(-2 N_e d_{i,j} / m)\)` (RSS and SBayesR),
+where Ne = 11400, m = 183 and `\(d_{i,j}\)` is the distance in Morgan. This shrinkage is equal to `\(0.024\)` for 3cM.
+    
+---
+
+### Second misspecification: varying GWAS sample sizes
+
+Simulating phenotypes with h2=0.2 and 2000 causal variants, and performing GWAS with 
+- N=300K for 50% of variants, 
+- N=240K (80%) for 25%, and 
+- N=180K (60%) for 25%. 
+
+--
+
+&lt;img src="group-meeting_files/figure-html/unnamed-chunk-2-1.png" width="90%" style="display: block; margin: auto;" /&gt;
+
+---
+
+### A closer look at lassosum2
+
+Using `\(R_{\delta} = R + \delta ~ I\)` `\(=&gt;\)` elastic-net (instead of simply lasso)
+
+&lt;img src="figures/lassosum2-mis.JPG" width="93%" style="display: block; margin: auto;" /&gt;
+
+---
+
+### A closer look at LDpred2-grid
+
+We can actually try some very small heritability (=&gt; strong regularization)
+
+&lt;img src="figures/ldpred2-mis.JPG" width="93%" style="display: block; margin: auto;" /&gt;
+
+---
+
+### Imputation of N?
+
+&lt;img src="group-meeting_files/figure-html/unnamed-chunk-5-1.png" width="70%" style="display: block; margin: auto;" /&gt;
+
+---
+
+### A closer look at lassosum2 (with imputed N)
+
+&lt;br&gt;
+
+&lt;img src="figures/lassosum2-mis-imputeN.JPG" width="93%" style="display: block; margin: auto;" /&gt;
+
+---
+
+### A closer look at LDpred2-grid (with imputed N)
+
+&lt;br&gt;
+
+&lt;img src="figures/ldpred2-mis-imputeN.JPG" width="93%" style="display: block; margin: auto;" /&gt;
+
+---
+
+class: center middle inverse
+
+# That's all folks!
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
