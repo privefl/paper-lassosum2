@@ -144,7 +144,72 @@ knitr::include_graphics("figures/ldpred2-mis-imputeN.JPG")
 
 ---
 
-### **Third misspecification**: correlation from imputed genotypes
+### **Third misspecification**: sumstats from imputed genotypes
+
+The standard deviations of the genotypes are smaller.
+
+```{r, out.width="75%"}
+knitr::include_graphics("figures/compare-sd2.JPG")
+```
+
+---
+
+### Simple correction for SD
+
+<br>
+
+```{r, out.width="80%"}
+knitr::include_graphics("figures/compare-sd.JPG")
+```
+
+---
+
+### Impact on GWAS effects
+
+<br>
+
+$$\boldsymbol{\hat{\gamma}_{\text{marg}}} = \dfrac{1}{n-1} \boldsymbol{S}^{-2} \boldsymbol{G}^T \boldsymbol{C_n} \boldsymbol{y} ~.$$
+```{r, out.width="100%"}
+knitr::include_graphics("figures/compare-beta.JPG")
+```
+
+---
+
+### Comparison with multiple imputation
+
+<br>
+
+```{r, out.width="80%"}
+knitr::include_graphics("figures/compare-beta2.JPG")
+```
+
+---
+
+### Final transformation
+
+<br>
+
+We are interested in $$\boldsymbol{\hat{\gamma}_{\text{joint}}} = \boldsymbol{S}^{-1} \boldsymbol{R}^{-1} \boldsymbol{S} \boldsymbol{\hat{\gamma}_{\text{marg}}} ~.$$
+
+Then, we could probably computed instead 
+
+$$\boldsymbol{\hat{\gamma}_{\text{joint}}} = \boldsymbol{F} \boldsymbol{S}^{-1} \boldsymbol{R}^{-1} \boldsymbol{F} \boldsymbol{S} \boldsymbol{\hat{\gamma}_{\text{marg}}} ~.$$
+
+where $\boldsymbol{F}$ is the diagonal matrix containing $\sqrt{\text{INFO}}$.
+
+---
+
+### Impact of this correction for lassosum2
+
+Simulation with 20K variants on chromosome 22, with 500 causal explaining h2=0.2.
+
+```{r, out.width="95%"}
+knitr::include_graphics("figures/lassosum2-info.JPG")
+```
+
+---
+
+### **Fourth misspecification**: correlation from imputed genotypes
 
 E.g. if using UK Biobank imputed data to compute correlations.
 
@@ -186,7 +251,7 @@ knitr::include_graphics("figures/compare-info.JPG")
 
 ---
 
-### **Fourth misspecification**: sumstats from imputed genotypes
+## Conclusion
 
 
 ---
