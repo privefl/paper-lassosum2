@@ -90,7 +90,7 @@ Simulating phenotypes with h2=0.2 and 2000 causal variants, and performing GWAS 
 
 --
 
-```{r, out.width="90%", message=FALSE}
+```{r, out.width="90%", message=FALSE, cache=TRUE}
 magick::image_read_pdf("figures/simu-misN.pdf", pages = 1)
 ```
 
@@ -118,7 +118,7 @@ knitr::include_graphics("figures/ldpred2-mis.JPG")
 
 ### Imputation of N?
 
-```{r, out.width="70%", message=FALSE}
+```{r, out.width="70%", message=FALSE, cache=TRUE}
 magick::image_read_pdf("figures/simu-qc-plot.pdf", pages = 1)
 ```
 
@@ -146,6 +146,43 @@ knitr::include_graphics("figures/ldpred2-mis-imputeN.JPG")
 
 ### **Third misspecification**: correlation from imputed genotypes
 
+E.g. if using UK Biobank imputed data to compute correlations.
+
+```{r, out.width="80%"}
+knitr::include_graphics("figures/compare-corr.JPG")
+```
+
+---
+
+### Multiple imputation to the rescue
+
+Randomly impute (according to imputation probabilities), compute correlation, repeat, average.
+
+```{r, out.width="80%"}
+knitr::include_graphics("figures/compare-corr2.JPG")
+```
+
+---
+
+### A more direct solution
+
+Just correct values from imputed dosages using INFO score.
+
+```{r, out.width="80%"}
+knitr::include_graphics("figures/compare-corr3.JPG")
+```
+
+---
+
+### A note on INFO scores
+
+You need to recompute them, instead of using the one reported.
+
+<br>
+
+```{r, out.width="80%"}
+knitr::include_graphics("figures/compare-info.JPG")
+```
 
 ---
 
