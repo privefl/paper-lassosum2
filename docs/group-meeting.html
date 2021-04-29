@@ -17,15 +17,11 @@ class: title-slide center middle inverse
 
 ## Multiple sources of misspecification&lt;br&gt;in summary statistics
 
+### Application to polygenic scores
+
 &lt;br&gt;
 
-### Florian Privé
-
----
-
-class: center middle inverse
-
-# Introduction
+#### Florian Privé
 
 ---
 
@@ -79,7 +75,7 @@ where Ne = 11400, m = 183 and `\(d_{i,j}\)` is the distance in Morgan. This shri
 
 ### **Second misspecification**: varying GWAS sample sizes
 
-Simulating phenotypes with h2=0.2 and 2000 causal variants, and performing GWAS with 
+Simulating phenotypes with h2=0.2 and 2000 causal variants in chromosome 22, and performing GWAS with 
 - N=300K for 50% of variants, 
 - N=240K (80%) for 25%, and 
 - N=180K (60%) for 25%. 
@@ -155,7 +151,7 @@ The standard deviations of the genotypes are smaller.
 
 ### Comparison with multiple imputation
 
-&lt;br&gt;
+Randomly impute (according to imputation probabilities), run GWAS, repeat, average.
 
 &lt;img src="figures/compare-beta2.JPG" width="80%" style="display: block; margin: auto;" /&gt;
 
@@ -167,7 +163,9 @@ The standard deviations of the genotypes are smaller.
 
 We are interested in `$$\boldsymbol{\hat{\gamma}_{\text{joint}}} = \boldsymbol{S}^{-1} \boldsymbol{R}^{-1} \boldsymbol{S} \boldsymbol{\hat{\gamma}_{\text{marg}}} ~.$$`
 
-Then, we could probably computed instead 
+&lt;br&gt;
+
+Then, we could probably compute instead 
 
 `$$\boldsymbol{\hat{\gamma}_{\text{joint}}} = \boldsymbol{F} \boldsymbol{S}^{-1} \boldsymbol{R}^{-1} \boldsymbol{F} \boldsymbol{S} \boldsymbol{\hat{\gamma}_{\text{marg}}} ~.$$`
 
@@ -185,7 +183,7 @@ Simulation with 20K variants on chromosome 22, with 500 causal explaining h2=0.2
 
 ### **Fourth misspecification**: correlation from imputed genotypes
 
-E.g. if using UK Biobank imputed data to compute correlations.
+E.g. if using UK Biobank imputed data to compute `\(R\)`.
 
 &lt;img src="figures/compare-corr.JPG" width="80%" style="display: block; margin: auto;" /&gt;
 
@@ -203,22 +201,47 @@ Randomly impute (according to imputation probabilities), compute correlation, re
 
 Just correct values from imputed dosages using INFO score.
 
-&lt;img src="figures/compare-corr3.JPG" width="80%" style="display: block; margin: auto;" /&gt;
+&lt;img src="figures/compare-corr3.JPG" width="85%" style="display: block; margin: auto;" /&gt;
 
 ---
 
 ### A note on INFO scores
 
-You need to recompute them, instead of using the one reported.
+You need to recompute them, instead of using the ones reported.
 
 &lt;br&gt;
 
-&lt;img src="figures/compare-info.JPG" width="80%" style="display: block; margin: auto;" /&gt;
+&lt;img src="figures/compare-info.JPG" width="85%" style="display: block; margin: auto;" /&gt;
 
 ---
 
 ## Conclusion
 
+There are many possible sources of misspecification when deriving PGS from summary statistics:
+
+--
+
+1. We estimate out-sample LD =&gt; need some regularization
+
+--
+
+2. GWAS sample size is not always the same for all variants (and this information is often missing in summary statistics)
+
+--
+
+3. GWAS summary statistics from imputed data need to be corrected; `\(\text{INFO}_j &lt; 1\)` resembles `\(n_j &lt; N\)`, but the correction is slightly different
+
+--
+
+4. When computing LD from imputed data, need to correct as well
+
+--
+
+&lt;br&gt;
+
+My hope is that correcting for N / INFO will be enough for e.g. LDpred2-auto (which cannot really play with different regularizations).
+
+I need to test this on real data.
 
 ---
 
